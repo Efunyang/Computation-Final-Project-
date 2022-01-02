@@ -8,13 +8,13 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 from fsm import TocMachine
-from utils import send_text_message
+from utils import send_text_message, send_carousel_message, send_button_message, send_image_message
 
 load_dotenv()
 
 
 machine = TocMachine(
-    states=["choose","girlshorthair","girllonghair""girlshortshow","girlshortimg1","girlshortimg2","girlshortimg3","girllongshow","girllongimg1","girllongimg2","girllongimg3"],
+    states=["choose","girlshorthair","girllonghair","girlshortshow","girlshortimg1","girlshortimg2","girlshortimg3","girllongshow","girllongimg1","girllongimg2","girllongimg3"],
     transitions=[
         {
             "trigger": "advance",
@@ -39,7 +39,7 @@ machine = TocMachine(
             "source": "girlshorthair",
             "dest": "girlshortshow",
             "conditions": "is_going_to_girlshortshow",
-        }, 
+        },
         {
             "trigger": "advance",
             "source": "girlshortshow",
@@ -87,14 +87,14 @@ machine = TocMachine(
             "source": "girlshorthair",
             "dest": "choose",
             "conditions": "is_going_to_choose",
-        }, 
-     
+        },
+
         {
             "trigger": "advance",
             "source": "girllonghair",
             "dest": "girllongshow",
             "conditions": "is_going_to_girllongshow",
-        }, 
+        },
         {
             "trigger": "advance",
             "source": "girllongshow",
@@ -166,34 +166,6 @@ if channel_access_token is None:
 line_bot_api = LineBotApi(channel_access_token)
 parser = WebhookParser(channel_secret)
 
-
-@app.route("/callback", methods=["POST"])
-def callback():
-    signature = request.headers["X-Line-Signature"]
-    # get request body as text
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-
-    # parse webhook body
-    try:
-        events = parser.parse(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-
-    # if event is MessageEvent and message is TextMessage, then echo text
-    for event in events:
-        if not isinstance(event, MessageEvent):
-            continue
-        if not isinstance(event.message, TextMessage):
-            continue
-
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=event.message.text)
-        )
-
-    return "OK"
-
-
 @app.route("/webhook", methods=["POST"])
 def webhook_handler():
     signature = request.headers["X-Line-Signature"]
@@ -219,42 +191,41 @@ def webhook_handler():
         print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         if response == False:
-            if event.message.text.lower() == 'fsm':
-                send_image_message(event.reply_token, 'https://f74062044.herokuapp.com/show-fsm')
-            elif machine.state != 'user' and event.message.text.lower() == 'restart':
-                send_text_message(event.reply_token, '輸入『start』即可開始使用美麗髮廊。\n隨時輸入『restart』可以從頭開始。\n隨時輸入『fsm』可以得到當下的狀態圖。')
+            if machine.state != "user" and event.message.text.lower() == "restart":
+                send_text_message(event.reply_token, "輸入『start』即可開始使用美麗髮廊。\n隨時輸入『restart』可以從頭開始。")
                 machine.go_back()
-            elif machine.state == 'user':
-                send_text_message(event.reply_token, '輸入『start』即可開始使用美麗髮廊。\n隨時輸入『restart』可以從頭開始。\n隨時輸入『fsm』可以得到當下的狀態圖。')
-            elif machine.state == 'choose':
-                send_text_message(event.reply_token, '請輸入『短髮』或『長髮』')
-            elif machine.state == 'girlshorthair':
-                if event.message.text.lower() == '短髮介紹':
-                    text = '想嘗試短髮髮型別再猶豫!剪了短髮不只有超小臉效果、還能大大減齡，剪完顏值更是瞬間提升不少!'
+            elif machine.state == "user":
+                send_text_message(event.reply_token, "輸入『start』即可開始使用美麗髮廊。\n隨時輸入『restart』可以從頭開始")
+            elif machine.state == "choose":
+                send_text_message(event.reply_token, "請輸入『短髮』或『長髮』")
+            elif machine.state == "girlshorthair":
+                if event.message.text.lower() == "短髮介紹":
+                    text = "想嘗試短髮髮型別再猶豫!剪了短髮不只有超小臉效果、還能大大減齡，剪完顏值更是瞬間提升不少!"
                     send_text_message(event.reply_token, text)
-                elif event.message.text.lower() == '短髮髮廊':
-                    text = '店名:MVSA \n地址: 701台南市東區勝利路57號'
+                elif event.message.text.lower() == "短髮髮廊":
+                    text = "店名:MVSA \n地址: 701台南市東區勝利路57號"
                     send_text_message(event.reply_token, text)
-                elif event.message.text.lower() != 'back':
-                    send_text_message(event.reply_token, '輸入『短髮髮型』可以查看髮型推薦。\n輸入『短髮介紹』或『短髮髮廊』會有文字說明。\n輸入『back』返回選單。')
-            elif (machine.state == 'girlshortimg1' or machine.state == 'girlshortimg2'or machine.state == 'girlshortimg3') and (event.message.text.lower() != 'back'):
-                send_text_message(event.reply_token, '輸入『back』返回選單。')
-            elif machine.state == 'girlshortshow' and event.message.text.lower() != 'back':
-                send_text_message(event.reply_token, '輸入『圖1』或『圖2』或『圖3』。\n輸入『back』返回選單。')
-            elif machine.state == 'girllonghair':
-                if event.message.text.lower() == '長髮介紹':
-                    text = '長髮造型讓人散發女人味。不過，長髮造型會因為瀏海，給人的印象會有180度的轉變。沒有瀏海的話，會讓人看起來比較嫵媚，有的話，則會讓人顯得可愛年輕有朝氣…不改變頭髮的長度，只要稍稍修剪瀏海也有可能大幅改變形象。'
+                elif event.message.text.lower() != "back":
+                    send_text_message(event.reply_token, "輸入『短髮髮型』可以查看髮型推薦。\n輸>入『短髮介紹』或『短髮髮廊』會有文字說明。\n輸入『back』返回選單。")
+            elif (machine.state == "girlshortimg1" or machine.state == "girlshortimg2"or machine.state == "girlshortimg3") and (event.message.text.lower() != "back"):
+                send_text_message(event.reply_token, "輸入『back』返回選單。")
+            elif (machine.state == "girlshortshow") and (event.message.text.lower() != "back"):
+                send_text_message(event.reply_token, "輸入『圖1』或『圖2』或『圖3』。\n輸入『back』返回選單。")
+            elif machine.state == "girllonghair":
+                if event.message.text.lower() == "長髮介紹":
+                    text = "長髮造型讓人散發女人味。不過，長髮造型會因為瀏海，給人的印象會有180度的轉變。沒有瀏海的話，會讓人看起來比較嫵媚，有的話，則會讓人顯得可愛年輕有朝氣…不改變頭髮的長度，只要稍稍修剪瀏海也有可能大幅改變形象。"
                     send_text_message(event.reply_token, text)
-                elif event.message.text.lower() == '長髮髮廊':
-                    text = '店名:Jole玩色美學形象店\n地址:台南市南區西門路一段575巷4號'
+                elif event.message.text.lower() == "長髮髮廊":
+                    text = "店名:Jole玩色美學形象店\n地址:台南市南區西門路一段575巷4號"
                     send_text_message(event.reply_token, text)
-                elif event.message.text.lower() != 'back':
-                    send_text_message(event.reply_token, '輸入『長髮髮型』可以查看髮型推薦。\n輸入『長髮介紹』或『長髮髮廊』會有文字說明。\n輸入『back』返回選單。')
-            elif (machine.state == 'girllongimg1' or machine.state == 'girllongimg2'or machine.state == 'girllongimg3') and (event.message.text.lower() != 'back'):
-                send_text_message(event.reply_token, '輸入『back』返回選單。')
-            elif machine.state == 'girllongshow' and event.message.text.lower() != 'back':
-                send_text_message(event.reply_token, '輸入『圖1』或『圖2』或『圖3』。\n輸入『back』返回選單。')
+                elif event.message.text.lower() != "back":
+                    send_text_message(event.reply_token, "輸入『長髮髮型』可以查看髮型推薦。\n輸入『長髮介紹』或『長髮髮廊』會有文字說明。\n輸入『back』返回選單。")
+            elif (machine.state == "girllongimg1" or machine.state == "girllongimg2"or machine.state == "girllongimg3") and (event.message.text.lower() != "back"):
+                send_text_message(event.reply_token, "輸入『back』返回選單。")
+            elif (machine.state == "girllongshow") and (event.message.text.lower() != "back"):
+                send_text_message(event.reply_token, "輸入『圖1』或『圖2』或『圖3』。\n輸入『back』返回選單。")
     return "OK"
+
 
 
 @app.route("/show-fsm", methods=["GET"])
