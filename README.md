@@ -8,6 +8,7 @@
 * Python 3.6
 * Pipenv
 * ubuntu 20.04
+* ngrok http 8000
 
 ### 使用說明
 * 操作
