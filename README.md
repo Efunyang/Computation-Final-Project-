@@ -32,6 +32,21 @@
         * 會有文字推薦的髮廊
       * 長髮髮型
         * 有三種圖示讓你參考  
+### FSM
+![image](https://github.com/Efunyang/Computation-Final-Project-/blob/master/img/fsm.png)
+ #### state說明
+   * user: 輸入start開始
+   * choose: 輸入短髮或長髮
+   * girlshorthair: 選擇介紹或髮型或髮廊
+   * girllonghair: 選擇介紹或髮型或髮廊
+   * girlshortshow: 選擇短髮髮型各種圖示
+   * girlshortimg1: 選擇顯示短髮圖1
+   * girlshortimg2: 選擇顯示短髮圖2
+   * girlshortimg3: 選擇顯示短髮圖3
+   * girllongshow: 選擇長髮髮型各種圖示
+   * girllonfimg1: 選擇顯示長髮圖1
+   * girllongimg2: 選擇顯示長髮圖2
+   * girllongimg3: 選擇顯示長髮圖3
 ### Demo
 ![image](https://github.com/Efunyang/Computation-Final-Project-/blob/master/img/readmepic/S__39805535.jpg)
 ![image](https://github.com/Efunyang/Computation-Final-Project-/blob/master/img/readmepic/S__39805537.jpg)
